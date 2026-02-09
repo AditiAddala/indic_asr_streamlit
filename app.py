@@ -2,11 +2,8 @@ import streamlit as st
 import torch
 import librosa
 import numpy as np
-from transformers import AutoModel
 import io
-
-
-
+from transformers import AutoModel
 
 # -----------------------------------
 # PAGE CONFIG
@@ -20,36 +17,30 @@ st.set_page_config(
 st.title("🎤 IndicConformer Speech-to-Text Demo")
 
 # -----------------------------------
-# LOAD MODEL (cached so it loads once)
+# LOAD MODEL (cached)
 # -----------------------------------
 
 @st.cache_resource
 def load_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    HF_TOKEN = st.secrets["HF_TOKEN"]
-
-    model = AutoModel.from_pretrained(
-        "ai4bharat/indic-conformer-600m-multilingual",
-        trust_remote_code=True,
-        use_auth_token=HF_TOKEN
-    )
-
-
-    model = model.to(device)
-
-    # Warmup (optional but recommended)
-    dummy_audio = torch.randn(1, 16000).to(device)
-    _ = model(dummy_audio, "hi", "rnnt")
-
-    return model, device
-
+    
+    try:
+        model = AutoModel.from_pretrained(
+            "ai4bharat/indic-conformer-600m-multilingual",
+            trust_remote_code=True,
+            use_auth_token=st.secrets["HF_TOKEN"]  # uses token from Streamlit secrets
+        )
+        model = model.to(device)
+        return model, device
+    except Exception as e:
+        st.error(f"Failed to load model: {e}")
+        st.stop()  # stop app if model fails
 
 model, DEVICE = load_model()
-
-st.success("Model loaded successfully!")
+st.success("✅ Model loaded successfully!")
 
 # -----------------------------------
-# UI
+# UI: Language selection and file upload
 # -----------------------------------
 
 language = st.selectbox(
@@ -67,22 +58,25 @@ uploaded_file = st.file_uploader(
 # -----------------------------------
 
 if uploaded_file:
-
     st.audio(uploaded_file)
-
+    
     if st.button("Transcribe"):
-
         with st.spinner("Transcribing..."):
-
-            # Load audio
-            audio_bytes = uploaded_file.read()
-
-            waveform, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000)
-
-            waveform = torch.tensor(waveform).unsqueeze(0).to(DEVICE)
-
-            # Run model
-            result = model(waveform, language, "rnnt")
-
-        st.subheader("Transcription:")
-        st.write(result)
+            try:
+                # Load audio properly
+                audio_bytes = uploaded_file.read()
+                waveform, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000)
+                
+                # Convert to torch tensor
+                waveform = torch.tensor(waveform).unsqueeze(0).to(DEVICE)
+                
+                # Run model - note: adjust the following if your model requires a custom call
+                # Some Indic Conformer repos provide their own inference function, e.g. model.predict()
+                # If AutoModel doesn’t support direct forward call, replace with correct method
+                result = model(waveform, language, "rnnt")
+                
+                st.subheader("Transcription:")
+                st.write(result)
+            
+            except Exception as e:
+                st.error(f"Error during transcription: {e}")
