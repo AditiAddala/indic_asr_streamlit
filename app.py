@@ -29,7 +29,7 @@ def load_model():
         from model_onnx import Speech2TextModel
 
         model = Speech2TextModel.from_pretrained(
-            "ai4bharat/indic-conformer-600m-multilingual",
+            "ai4bharat/indic-conformer-200m-multilingual",
             use_auth_token=HF_TOKEN
         )
         model_type = "custom"
