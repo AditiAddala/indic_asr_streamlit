@@ -19,7 +19,7 @@ st.title("🎤 IndicConformer Speech-to-Text Demo")
 # LOAD MODEL (cached)
 # -----------------------------------
 
-@st.cache_resource
+
 def load_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     HF_TOKEN = st.secrets["HF_TOKEN"]
