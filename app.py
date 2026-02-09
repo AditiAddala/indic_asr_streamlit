@@ -3,6 +3,10 @@ import torch
 import librosa
 import numpy as np
 from transformers import AutoModel
+import io
+
+
+
 
 # -----------------------------------
 # PAGE CONFIG
@@ -22,11 +26,14 @@ st.title("🎤 IndicConformer Speech-to-Text Demo")
 @st.cache_resource
 def load_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    HF_TOKEN = st.secrets["HF_TOKEN"]
 
     model = AutoModel.from_pretrained(
         "ai4bharat/indic-conformer-600m-multilingual",
-        trust_remote_code=True
+        trust_remote_code=True,
+        use_auth_token=HF_TOKEN
     )
+
 
     model = model.to(device)
 
@@ -70,10 +77,7 @@ if uploaded_file:
             # Load audio
             audio_bytes = uploaded_file.read()
 
-            waveform, sr = librosa.load(
-                np.frombuffer(audio_bytes, dtype=np.uint8),
-                sr=16000
-            )
+            waveform, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000)
 
             waveform = torch.tensor(waveform).unsqueeze(0).to(DEVICE)
 
