@@ -1,0 +1,11 @@
+streamlit
+torch
+transformers
+accelerate
+torchaudio
+librosa
+numpy
+onnxruntime==1.18.1
+huggingface_hub
+sentencepiece
+soundfile
